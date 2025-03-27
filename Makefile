@@ -1,0 +1,2 @@
+all:
+	g++ -I src/include -L src/lib -o main source/main.cpp source/Game.cpp source/TextureManager.cpp source/GameObject.cpp source/Map.cpp source/Vector2D.cpp source/Collision.cpp source/ECS/EntityComponentSystem.cpp -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf
