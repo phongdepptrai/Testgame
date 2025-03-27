@@ -35,7 +35,7 @@ public:
                     break;
             }
         }
-        else if(Game::event.type == SDL_KEYUP && Game::event.key.repeat == 0){
+        else if(Game::event.type == SDL_KEYUP ){
             switch(Game::event.key.keysym.sym){
                 case SDLK_w:
                     transform->velocity.y = 0;

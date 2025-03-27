@@ -55,7 +55,7 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height, bo
     map = new Map("assets/MapTexture/Terrain_ss.png", 3, 32);
     map->LoadMap("assets/MapTexture/map.map", 25, 20);
 
-    Player.addComponent<TransformComponent>(400.0f, 320.0f, 96, 96, 2);
+    Player.addComponent<TransformComponent>(500.0f, 600.0f, 96, 96, 2);
     Player.addComponent<SpriteComponent>("assets/PlayerTexture/Samurai.png", true);
     Player.addComponent<Controller>();
     Player.addComponent<ColliderComponent>("player");
@@ -82,19 +82,20 @@ void Game::update() {
     SDL_Rect playerCol = Player.getComponent<ColliderComponent>().collider;
     Vector2D playerPos = Player.getComponent<TransformComponent>().position;
 
-    for (auto& c : colliders) {
-        SDL_Rect cCol = c->getComponent<ColliderComponent>().collider;
-        if (Collision::CheckCollision(playerCol, cCol)) {
-            if (c->hasComponent<ColliderComponent>()) {
-                Player.getComponent<TransformComponent>().position = playerPos;
-            }
-        }
-    }
-
     manager.refresh();
     manager.update();
-    camera.x = Player.getComponent<TransformComponent>().position.x - 400;
-    camera.y = Player.getComponent<TransformComponent>().position.y - 320;
+
+
+
+    for (auto& c : colliders) {
+        SDL_Rect cCol = c->getComponent<ColliderComponent>().collider;
+        if (Collision::CheckCollision(cCol, playerCol)) {
+            std::cout<<"Collision with: " << c->getComponent<ColliderComponent>().tag << std::endl;
+            Player.getComponent<TransformComponent>().position = playerPos;
+        }
+    }
+    camera.x = Player.getComponent<TransformComponent>().position.x - 320;
+    camera.y = Player.getComponent<TransformComponent>().position.y - 200;
 
     if (camera.x < 0)
         camera.x = 0;

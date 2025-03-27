@@ -50,7 +50,7 @@ public:
     bool hasGroup(Group mGroup) const noexcept {
         return groupBitSet[mGroup];
     }
-    void addGroup(Group mGroup) noexcept;
+    void addGroup(Group mGroup);
     void delGroup(Group mGroup) noexcept {
         groupBitSet[mGroup] = false;
     }

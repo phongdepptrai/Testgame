@@ -2,5 +2,5 @@
 
 void Entity::destroy() { active = false; }
 
-void Entity::addGroup(Group mGroup) noexcept { groupBitSet[mGroup] = true; manager.AddToGroup(this, mGroup); }
+void Entity::addGroup(Group mGroup) { groupBitSet[mGroup] = true; manager.AddToGroup(this, mGroup); }
 // #include "EntityComponentSystem.hpp"

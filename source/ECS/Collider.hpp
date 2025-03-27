@@ -31,7 +31,6 @@ public:
         tex = TextureManager::LoadTexture("assets/MapTexture/Grass4.png"); 
         srcR = {0, 0, 32, 32};
         destR = {collider.x, collider.y, collider.w, collider.h};
-
     }
 
     void update() override{
@@ -41,17 +40,17 @@ public:
             collider.w = transform->width * transform->scale;
             collider.h = transform->height * transform->scale;
         }
-        
+        if (tag == "player"){
+            collider.x = static_cast<int>(transform->position.x + 16 * transform->scale);
+            collider.y = static_cast<int>(transform->position.y + 32 * transform->scale);
+            collider.w = (transform->width - 32) * transform->scale;
+            collider.h = (transform->height - 32) * transform->scale;
+        }
         destR.x = collider.x - Game::camera.x;
         destR.y = collider.y - Game::camera.y;
-
-
     }
     
     void draw() override{
         TextureManager::Draw(tex, srcR, destR, SDL_FLIP_NONE);
     }
-
-
-
 };

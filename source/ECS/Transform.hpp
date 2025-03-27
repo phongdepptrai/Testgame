@@ -13,6 +13,7 @@ class TransformComponent : public Component {
         int scale = 1;
 
         int speed = 3;
+
         TransformComponent(){
             position.Zero();
         }
@@ -28,7 +29,13 @@ class TransformComponent : public Component {
             width = w;
             scale = s;
         }
-        
+        TransformComponent(bool isPlayer, float x, float y, int h, int w, int s){
+            position.x = x;
+            position.y = y;
+            height = h;
+            width = w;
+            scale = s;
+        }
         void init() override {
             velocity.Zero();
         }
