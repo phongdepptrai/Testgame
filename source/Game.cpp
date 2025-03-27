@@ -14,130 +14,121 @@ Map* map;
 SDL_Renderer* Game::renderer = nullptr;
 Manager manager;
 
+SDL_Rect Game::camera = {0, 0, 800, 640};
+
 auto& Player(manager.addEntity());
 auto& wall(manager.addEntity());
 
 SDL_Event Game::event;
+bool Game::isRunning = false;
 
-std::vector<ColliderComponent*> Game::colliders;
-
-
-enum GroupLabels : std::size_t{
-    groupMap,
-    groupPlayers,
-    groupEnemies,
-    groupColliders
-};
-
-Game::Game(){
-}
-Game::~Game(){
+Game::Game() {
 }
 
-void Game::init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen){
+Game::~Game() {
+}
+
+void Game::init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen) {
     int flags = 0;
-    if(fullscreen){
+    if (fullscreen) {
         flags = SDL_WINDOW_FULLSCREEN;
     }
 
-    if(SDL_Init(SDL_INIT_EVERYTHING) == 0){
+    if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
         std::cout << "SDL initialized" << std::endl;
 
         window = SDL_CreateWindow(title, xpos, ypos, width, height, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
-        if(window){
+        if (window) {
             std::cout << "Window created" << std::endl;
         }
         renderer = SDL_CreateRenderer(window, -1, 0);
-        if(renderer){
+        if (renderer) {
             std::cout << "Renderer created" << std::endl;
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         }
-        //if SDL successfully creates a renderer, the game will run
         isRunning = true;
-    }
-    else{
-        // if SDL fails to initialize, the game will not run
+    } else {
         isRunning = false;
         std::cout << "SDL failed to initialize" << std::endl;
     }
-    
 
-    
-    map = new Map();
-    
-    // Map::LoadMap("assets/MapTexture/TestMap.txt", 16, 16);
-    
-    //wall
-    //wall components
-    wall.addComponent<TransformComponent>(300.0f, 300.0f, 300, 20, 1);
-    wall.addComponent<SpriteComponent>("assets/bird.png");
-    wall.addComponent<ColliderComponent>("wall");
-    //wall group
-    wall.addGroup(groupMap);
+    map = new Map("assets/MapTexture/Terrain_ss.png", 3, 32);
+    map->LoadMap("assets/MapTexture/map.map", 25, 20);
 
-    //player
-    // player components
-    Player.addComponent<TransformComponent>(0.0f, 0.0f, 96, 96, 1);
-    Player.addComponent<SpriteComponent>("assets/PlayerTexture/Sprites/IDLE.png",10,100);
+    Player.addComponent<TransformComponent>(400.0f, 320.0f, 96, 96, 2);
+    Player.addComponent<SpriteComponent>("assets/PlayerTexture/Samurai.png", true);
     Player.addComponent<Controller>();
     Player.addComponent<ColliderComponent>("player");
-    //player group
     Player.addGroup(groupPlayers);
 }
 
-void Game::handleEvents(){
-    
+auto& tiles(manager.getGroup(Game::groupMap));
+auto& players(manager.getGroup(Game::groupPlayers));
+auto& enemies(manager.getGroup(Game::groupEnemies));
+auto& colliders(manager.getGroup(Game::groupColliders));
+
+void Game::handleEvents() {
     SDL_PollEvent(&event);
-    switch (event.type){
+    switch (event.type) {
         case SDL_QUIT:
             isRunning = false;
             break;
-
         default:
             break;
     }
 }
 
-void Game::update(){
+void Game::update() {
+    SDL_Rect playerCol = Player.getComponent<ColliderComponent>().collider;
+    Vector2D playerPos = Player.getComponent<TransformComponent>().position;
+
+    for (auto& c : colliders) {
+        SDL_Rect cCol = c->getComponent<ColliderComponent>().collider;
+        if (Collision::CheckCollision(playerCol, cCol)) {
+            if (c->hasComponent<ColliderComponent>()) {
+                Player.getComponent<TransformComponent>().position = playerPos;
+            }
+        }
+    }
+
     manager.refresh();
     manager.update();
-    
-    for(auto cc : colliders){
-        Collision::CheckCollision(Player.getComponent<ColliderComponent>(), *cc);
-    }
+    camera.x = Player.getComponent<TransformComponent>().position.x - 400;
+    camera.y = Player.getComponent<TransformComponent>().position.y - 320;
+
+    if (camera.x < 0)
+        camera.x = 0;
+    if (camera.y < 0)
+        camera.y = 0;
+    if (camera.x > camera.w)
+        camera.x = camera.w;
+    if (camera.y > camera.h)
+        camera.y = camera.h;
 }
 
-auto& tiles(manager.getGroup(groupMap));
-auto& players(manager.getGroup(groupPlayers));
-auto& enemies(manager.getGroup(groupEnemies));
-auto& colliders(manager.getGroup(groupColliders));
-
-void Game::render(){
+void Game::render() {
     SDL_RenderClear(renderer);
 
-    for (auto& t : tiles){
+    for (auto& t : tiles) {
         t->draw();
     }
-    for (auto& p : players){
+    for (auto& c : colliders) {
+        c->draw();
+    }
+    for (auto& p : players) {
         p->draw();
     }
-    for (auto& e : enemies){
+    for (auto& e : enemies) {
         e->draw();
     }
     SDL_RenderPresent(renderer);
 }
 
-void Game::clean(){
+void Game::clean() {
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
-    std::cout<<"Game cleaned"<<std::endl;
+    std::cout << "Game cleaned" << std::endl;
 }
 
-void Game::addTile(int id, int x, int y){
-    auto& tile(manager.addEntity());
-    tile.addComponent<TileComponent>(x, y, 32, 32, id);
-    tile.addComponent<ColliderComponent>("terrain");
-    tile.addGroup(groupMap);
-}
 

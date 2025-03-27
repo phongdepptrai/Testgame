@@ -17,6 +17,7 @@ class Game{
 
         void handleEvents();
         void update();
+        
         void render();
         void clean();
 
@@ -24,11 +25,18 @@ class Game{
             return isRunning;
         }
 
-        static void addTile(int id, int x, int y);
+        
 
         static SDL_Renderer* renderer;
         static SDL_Event event;
-        static std::vector<ColliderComponent*> colliders;
+        static bool isRunning;
+        static SDL_Rect camera;
+        enum GroupLabels : std::size_t{
+            groupMap,
+            groupPlayers,
+            groupEnemies,
+            groupColliders
+        };
     private:
         int cnt = 0;
         SDL_Window* window;
