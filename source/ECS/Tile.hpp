@@ -24,8 +24,9 @@ public:
     }
 
 
-    TileComponent(int srcX, int srcY, int xpos, int ypos, int tsize, int tscale, const char* path) {
-        texture = TextureManager::LoadTexture(path);
+    TileComponent(int srcX, int srcY, int xpos, int ypos, int tsize, int tscale, SDL_Texture* text) {
+        
+        texture = text;
         srcRect.x = srcX;
         srcRect.y = srcY;
         srcRect.w = srcRect.h = tsize;

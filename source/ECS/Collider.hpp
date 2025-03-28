@@ -41,16 +41,16 @@ public:
             collider.h = transform->height * transform->scale;
         }
         if (tag == "player"){
-            collider.x = static_cast<int>(transform->position.x + 16 * transform->scale);
-            collider.y = static_cast<int>(transform->position.y + 32 * transform->scale);
-            collider.w = (transform->width - 32) * transform->scale;
-            collider.h = (transform->height - 32) * transform->scale;
+            collider.x = static_cast<int>(transform->position.x + 52 * transform->scale);
+            collider.y = static_cast<int>(transform->position.y + 48 * transform->scale);
+            collider.w = (transform->width - 85) * transform->scale;
+            collider.h = (transform->height - 63) * transform->scale;
         }
         destR.x = collider.x - Game::camera.x;
         destR.y = collider.y - Game::camera.y;
     }
     
-    void draw() override{
-        TextureManager::Draw(tex, srcR, destR, SDL_FLIP_NONE);
-    }
+    // void draw() override{
+    //     TextureManager::Draw(tex, srcR, destR, SDL_FLIP_NONE);
+    // }
 };

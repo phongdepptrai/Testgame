@@ -29,13 +29,6 @@ class TransformComponent : public Component {
             width = w;
             scale = s;
         }
-        TransformComponent(bool isPlayer, float x, float y, int h, int w, int s){
-            position.x = x;
-            position.y = y;
-            height = h;
-            width = w;
-            scale = s;
-        }
         void init() override {
             velocity.Zero();
         }
