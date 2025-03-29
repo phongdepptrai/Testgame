@@ -11,7 +11,7 @@ public:
     AssetManager(Manager * man);
     ~AssetManager();
     
-    void creatProjectile(Vector2D pos, Vector2D velocity,int range, int speed, std::string textureID);
+    void creatProjectile(Vector2D pos, Vector2D velocity,int range,int speed, int damage, std::string textureID);
 
 
     //texture management

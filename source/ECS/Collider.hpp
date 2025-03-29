@@ -9,7 +9,6 @@ class ColliderComponent : public Component{
 public:
     SDL_Rect collider;
     std::string tag;
-    SDL_Texture* tex;
     SDL_Rect srcR, destR;
 
     TransformComponent* transform;
@@ -28,7 +27,6 @@ public:
             entity->addComponent<TransformComponent>();
         }
         transform = &entity->getComponent<TransformComponent>();
-        tex = TextureManager::LoadTexture("assets/MapTexture/Grass4.png"); 
         srcR = {0, 0, 32, 32};
         destR = {collider.x, collider.y, collider.w, collider.h};
     }
@@ -41,10 +39,10 @@ public:
             collider.h = transform->height * transform->scale;
         }
         if (tag == "player"){
-            collider.x = static_cast<int>(transform->position.x + 52 * transform->scale);
-            collider.y = static_cast<int>(transform->position.y + 48 * transform->scale);
-            collider.w = (transform->width - 85) * transform->scale;
-            collider.h = (transform->height - 63) * transform->scale;
+            collider.x = static_cast<int>(transform->position.x + 39 * transform->scale);
+            collider.y = static_cast<int>(transform->position.y + 58 * transform->scale);
+            collider.w = (transform->width - 71) * transform->scale;
+            collider.h = (transform->height - 72) * transform->scale;
         }
         destR.x = collider.x - Game::camera.x;
         destR.y = collider.y - Game::camera.y;

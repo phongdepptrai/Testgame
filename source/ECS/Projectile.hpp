@@ -7,7 +7,7 @@
 
 class ProjectileComponent: public Component{
 public:
-    ProjectileComponent(int mrange, int mspeed, Vector2D mvelocity): range(mrange), speed(mspeed), velocity(mvelocity){
+    ProjectileComponent(int mrange, int mspeed, Vector2D mvelocity, int mdamage): range(mrange), speed(mspeed), velocity(mvelocity), damage(mdamage){
 
     };
     ~ProjectileComponent(){
@@ -15,6 +15,9 @@ public:
     };
     void init() override{
         transform = &entity->getComponent<TransformComponent>();
+        //take player damage to this projectile
+
+        transform->damage = damage;
         transform->velocity = velocity;
     }
 
@@ -39,5 +42,6 @@ private:
     int range = 0;
     int speed = 0;
     int distance= 0;
+    int damage = 0;
     Vector2D velocity = Vector2D(0,0);
 };

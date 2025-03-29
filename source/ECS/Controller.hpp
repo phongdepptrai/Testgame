@@ -4,55 +4,64 @@
 #include "EntityComponentSystem.hpp"
 #include "Components.hpp"
 
-class Controller : public Component{
+class Controller : public Component {
 public:
     TransformComponent* transform;
     SpriteComponent* sprite;
-    void init(){
+    int attackTimer = 0;
+    bool isAttacking = false; // Flag to track attack state
+    void init() {
         transform = &entity->getComponent<TransformComponent>();
         sprite = &entity->getComponent<SpriteComponent>();
     }
+    int mouseX = 0, mouseY = 0;
+    Uint32 currentTime = 0;
+    Uint32 lastAttackTime = 0;
+    void update() {
+        currentTime = SDL_GetTicks();
 
-    void update(){
-        if(Game::event.type == SDL_KEYDOWN ){
-            switch(Game::event.key.keysym.sym){
+        // Mouse click -> attack
+        if(currentTime - lastAttackTime > 500) isAttacking = false, lastAttackTime = currentTime;
+        if (Game::event.type == SDL_MOUSEBUTTONDOWN && Game::event.button.button == SDL_BUTTON_LEFT) {
+            if (!isAttacking) {
+                isAttacking = true;
+            }
+        } 
+
+        // Keyboard
+        if (Game::event.type == SDL_KEYDOWN && Game::event.key.repeat == 0) {
+            switch (Game::event.key.keysym.sym) {
                 case SDLK_w:
                     transform->velocity.y = -1;
-                    sprite->play("Run");
+                    // sprite->play("Run");
                     break;
-                case SDLK_s: 
+                case SDLK_s:
                     transform->velocity.y = 1;
-                    sprite->play("Run");
+                    // sprite->play("Run");
                     break;
                 case SDLK_a:
                     transform->velocity.x = -1;
-                    sprite->play("Run");
-                    sprite->spriteFlip = SDL_FLIP_HORIZONTAL;
+                    // sprite->play("Run");
+                    transform->direction = true;
                     break;
                 case SDLK_d:
                     transform->velocity.x = 1;
-                    sprite->play("Run");
+                    // sprite->play("Run");
+                    transform->direction = false;
                     break;
             }
-        }
-        else if(Game::event.type == SDL_KEYUP ){
-            switch(Game::event.key.keysym.sym){
+        } else if (Game::event.type == SDL_KEYUP) {
+            switch (Game::event.key.keysym.sym) {
                 case SDLK_w:
-                    transform->velocity.y = 0;
-                    sprite->play("Idle");
-                    break;
                 case SDLK_s:
                     transform->velocity.y = 0;
-                    sprite->play("Idle");
+                    // sprite->play("Idle");
                     break;
                 case SDLK_a:
-                    transform->velocity.x = 0;
-                    sprite->play("Idle");
-                    sprite->spriteFlip = SDL_FLIP_NONE;
-                    break;
+
                 case SDLK_d:
                     transform->velocity.x = 0;
-                    sprite->play("Idle");
+                    // sprite->play("Idle");
                     break;
                 case SDLK_ESCAPE:
                     Game::isRunning = false;
@@ -61,5 +70,8 @@ public:
                     break;
             }
         }
+        if(isAttacking) sprite->play("Attack");
+        else if(transform->velocity.x || transform->velocity.y) sprite->play("Run");
+        else sprite->play("Idle");
     }
 };

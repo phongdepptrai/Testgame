@@ -13,12 +13,12 @@ SDL_Texture* AssetManager::getTexture(std::string textureID){
 }
 
 
-void AssetManager::creatProjectile(Vector2D pos, Vector2D velocity,int range, int speed, std::string textureID){
+void AssetManager::creatProjectile(Vector2D pos, Vector2D velocity,int range, int speed, int damage, std::string textureID){
     auto& projectile(manager->addEntity());
-    projectile.addComponent<TransformComponent>(pos.x, pos.y, 32, 32, 1);
-    projectile.addComponent<ProjectileComponent>(range, speed, velocity);
+    projectile.addComponent<TransformComponent>(pos.x, pos.y, 32, 32, 1, speed);
+    projectile.addComponent<ProjectileComponent>(range, speed, velocity, damage);
     projectile.addComponent<SpriteComponent>(textureID, false);
-    projectile.addComponent<ColliderComponent>("projectile");
+    projectile.addComponent<ColliderComponent>(textureID);
     projectile.addGroup(Game::groupProjectiles);
 
 }

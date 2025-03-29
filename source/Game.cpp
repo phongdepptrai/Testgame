@@ -22,14 +22,15 @@ AssetManager* Game::assets = new AssetManager(&manager);
 
 auto& Player(manager.addEntity());
 
-
 auto& Label(manager.addEntity());
 
 auto& startButton(manager.addEntity());
 auto& settingsButton(manager.addEntity());
 auto& exitButton(manager.addEntity());
 
+auto& background(manager.addEntity());  
 
+auto& Enemy(manager.addEntity());
 
 SDL_Event Game::event;
 bool Game::isRunning = false;
@@ -39,6 +40,9 @@ bool Game::menu = true;
 bool Game::exit = false;
 bool Game::settingsEnabled = false;
 
+Uint32 lastHitTime = 0;
+
+Uint32 lastProjectileTime = 0;
 
 Game::Game() {
 }
@@ -46,13 +50,13 @@ Game::Game() {
 Game::~Game() {
 }
 
-void Game::init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen, SDL_Window* window) {
+void Game::init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen) {
     int flags = 0;
     if (fullscreen) {
         flags = SDL_WINDOW_FULLSCREEN;
     }
     if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
-        std::cout << "SDL initialized" << std::endl;
+        window = SDL_CreateWindow(title, xpos, ypos, width, height, flags);
         if (window) {
             std::cout << "Window created" << std::endl;
         }
@@ -71,22 +75,35 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height, bo
         std::cout << "TTF failed to initialize" << std::endl;
     }
     initTextures();
-    // initObject();
-    
+    initComponents();
 }
 
 void Game::initTextures(){
     assets->addTexture( "player", "assets/PlayerTexture/Samurai.png");
     assets->addFont("font", "assets/Font/font.ttf", 16);
-    SDL_Color color = {23,243,254,205};
-    SDL_Color color2 = {233,23,254,205};
-    Label.addComponent<UI>(10, 10, "Score: 0", "font",white);
+    assets->addTexture("projectile", "assets/Projectiles/attack/attack.png");
+    
+    assets->addTexture("background", "assets/MapTexture/background.jpg");
+    
+    assets->addTexture("enemy", "assets/PlayerTexture/Golem.png");
+    
+    
+    assets->addTexture("Player_projectile", "assets/MapTexture/terrain_ss.png");
+}
+
+void Game::initComponents(){
+    background.addComponent<TransformComponent>(0, 0, 1280, 640, 1);
+    background.addComponent<SpriteComponent>("background");
 
     startButton.addComponent<UI>(255, 205, "Play Game", "font", white);
     settingsButton.addComponent<UI>(255, 255, "Settings", "font", mint);
     exitButton.addComponent<UI>(255, 305, "Exit", "font",white);
-}
 
+    SDL_Color color = {23,243,254,205};
+    SDL_Color color2 = {233,23,254,205};
+    Label.addComponent<UI>(10, 10, "Score: 0", "font",white);
+
+}
 void Game::initObject(){
    
     map = new Map(4, 20);
@@ -99,7 +116,12 @@ void Game::initObject(){
     Player.addComponent<ColliderComponent>("player");
     Player.addGroup(groupPlayers);
 
-    assets->addTexture("projectile", "assets/Projectiles/attack/attack.png");
+    Enemy.addComponent<TransformComponent>(1200.0f, 1200.0f, 44, 44, 7, 1);
+    Enemy.addComponent<SpriteComponent>("enemy", false);
+    Enemy.addComponent<ColliderComponent>("enemy");
+    Enemy.addGroup(groupEnemies);
+
+
     // assets->addTexture("projectile", "assets/MapTexture/terrain_ss.png");
 
     // assets->creatProjectile(Vector2D(1100,1000),Vector2D(2,0),100,1,"projectile" );
@@ -131,9 +153,9 @@ void Game::handleEvents() {
                 initObject();
                 menu = false;
             }
-            else if (exit){ 
+            else if (exit){
                 std::cout<<"exit"<<std::endl;
-                // game->clean(window);
+                isRunning = false;
                 // menu = false;
             }
             else if (settingsEnabled){
@@ -143,10 +165,31 @@ void Game::handleEvents() {
             }
         }
     }
+    else if(start){
+        SDL_GetMouseState(&mouseX, &mouseY);
+
+        if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+            Uint32 currentTime = SDL_GetTicks(); // Get the current time in milliseconds
+
+            // Check if 2 seconds (2000 ms) have passed since the last projectile
+            if (currentTime - lastProjectileTime >= 500) {
+                Vector2D playerPos = Vector2D(Player.getComponent<ColliderComponent>().collider.x, Player.getComponent<ColliderComponent>().collider.y);
+                Vector2D mousePos = Vector2D(mouseX - playerPos.x + camera.x, mouseY - playerPos.y + camera.y);
+                mousePos = mousePos.normalize();
+                int playerDamage = Player.getComponent<TransformComponent>().damage;
+                assets->creatProjectile(playerPos, mousePos, 500, 10, playerDamage, "Player_projectile");
+
+                lastProjectileTime = currentTime; // Update the last projectile time
+            }
+        }
+
+    }
 }
 
 void Game::update() {
     if(!menu){
+
+
         SDL_Rect playerCol = Player.getComponent<ColliderComponent>().collider;
         Vector2D playerPos = Player.getComponent<TransformComponent>().position;
 
@@ -166,11 +209,51 @@ void Game::update() {
         }
         for (auto& p : projectiles) {
             SDL_Rect pCol = p->getComponent<ColliderComponent>().collider;
+            
             if (Collision::CheckCollision(pCol, playerCol)) {
-                std::cout<<"Collision with: " << p->getComponent<ColliderComponent>().tag << std::endl;
-                p->destroy();   
+                if(p->getComponent<ColliderComponent>().tag != "Player_projectile"){
+                    std::cout<<"Collision with: " << p->getComponent<ColliderComponent>().tag << std::endl;
+                    p->destroy();  
+                }
             }
         }
+        
+        for(auto& e : enemies) {
+            Vector2D playerPos = Vector2D(Player.getComponent<ColliderComponent>().collider.x, Player.getComponent<ColliderComponent>().collider.y);
+            Vector2D playerDirection = Vector2D(playerPos.x  - e->getComponent<TransformComponent>().position.x, 
+                                                playerPos.y - e->getComponent<TransformComponent>().position.y);
+            playerDirection = playerDirection.normalize();
+            e->getComponent<TransformComponent>().velocity = playerDirection;
+
+            SDL_Rect eCol = e->getComponent<ColliderComponent>().collider;
+            if (Collision::CheckCollision(eCol, playerCol)) {
+                std::cout<<"Collision with: " << e->getComponent<ColliderComponent>().tag << std::endl;
+                // only can be hit once a 2 seconds
+                if (SDL_GetTicks() - lastHitTime >= 2000) {
+                    lastHitTime = SDL_GetTicks();
+                    Player.getComponent<TransformComponent>().health -= e->getComponent<TransformComponent>().damage;
+                }
+            }
+        }
+        for(auto& e: enemies){
+            SDL_Rect eCol = e->getComponent<ColliderComponent>().collider;
+            for(auto& p: projectiles){
+                if(p->getComponent<ColliderComponent>().tag == "Player_projectile"){
+                    SDL_Rect pCol = p->getComponent<ColliderComponent>().collider;
+                    if (Collision::CheckCollision(pCol, eCol)) {
+                        std::cout<<"Collision with: " << e->getComponent<ColliderComponent>().tag << std::endl;
+                        p->destroy();
+                        e->getComponent<TransformComponent>().health -= p->getComponent<TransformComponent>().damage;
+                        std::cout<<e->getComponent<TransformComponent>().health<<std::endl;
+                        if(e->getComponent<TransformComponent>().health <= 0){
+                            e->destroy();
+                        }
+                    }
+                }
+            }
+        }
+
+        
         camera.x = Player.getComponent<TransformComponent>().position.x - 320;
         camera.y = Player.getComponent<TransformComponent>().position.y - 200;
 
@@ -182,8 +265,17 @@ void Game::update() {
         //     camera.x = camera.w;
         // if (camera.y > camera.h)
         //     camera.y = camera.h;
+
+        if(Player.getComponent<TransformComponent>().health <= 0){
+            gameOver();
+        }
+
+
     }
     else if(menu){
+
+
+
         manager.refresh();
         manager.update();
         //check mouse position
@@ -244,7 +336,7 @@ void Game::render() {
         Label.draw();
     }
     else if(menu){
-        Label.draw();
+        background.draw();
         startButton.draw();
         settingsButton.draw();
         exitButton.draw();
@@ -252,7 +344,7 @@ void Game::render() {
     SDL_RenderPresent(renderer);
 }
 
-void Game::clean(SDL_Window* window) {
+void Game::clean() {
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
@@ -260,3 +352,25 @@ void Game::clean(SDL_Window* window) {
 }
 
 
+void Game::gameOver(){
+    std::cout<<"Game Over"<<std::endl;
+    for (auto& t : tiles) {
+        t->destroy();
+    }
+    for (auto& c : colliders) {
+        c->destroy();
+    }
+    for (auto& e : enemies) {
+        e->destroy();
+    }
+    for (auto& p : projectiles) {
+        p->destroy();
+    }
+    menu = true;
+    start = false;
+
+    Player.removeAllComponents();
+    
+    camera = {0, 0, 2000, 2000};
+
+}

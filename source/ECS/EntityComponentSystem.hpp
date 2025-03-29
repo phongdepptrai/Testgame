@@ -9,7 +9,7 @@
 
 class Component;
 class Entity;
-class Manager; // Forward declaration of Manager class
+class Manager; 
 
 using ComponentID = std::size_t;
 using Group = std::size_t;
@@ -83,6 +83,21 @@ public:
     template <typename T> T& getComponent() const {
         auto ptr(componentArray[getComponentTypeID<T>()]);
         return *static_cast<T*>(ptr);
+    }
+
+    template <typename T> void delAllComponents() {
+        for(auto& c : components) {
+            componentBitSet[getComponentTypeID<T>()] = false;
+            delete c;
+        }
+    }
+
+    void removeAllComponents() {
+        for (auto& c : components) {
+            componentBitSet[getComponentTypeID<std::remove_pointer_t<decltype(c.get())>>()] = false;
+        }
+        components.clear();
+        componentArray.fill(nullptr);
     }
 
 private:

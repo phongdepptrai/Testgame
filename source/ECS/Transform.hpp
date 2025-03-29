@@ -7,12 +7,17 @@ class TransformComponent : public Component {
     public:
         Vector2D position;
         Vector2D velocity;
+        bool direction = false;
 
         int height = 32;
         int width = 32;
         int scale = 1;
 
         int speed = 3;
+
+        int health = 100;
+        int maxHealth = 100;
+        int damage = 10;
 
         TransformComponent(){
             position.Zero();
@@ -22,12 +27,20 @@ class TransformComponent : public Component {
             position.y = 320;
             scale = sc;
         }
-        TransformComponent(float x, float y, int h, int w, int s){
+        TransformComponent(float x, float y, int w, int h, int s){
             position.x = x;
             position.y = y;
             height = h;
             width = w;
             scale = s;
+        }
+        TransformComponent(float x, float y, int w, int h, int s, int mspeed){
+            position.x = x;
+            position.y = y;
+            height = h;
+            width = w;
+            scale = s;
+            speed = mspeed;
         }
         void init() override {
             velocity.Zero();

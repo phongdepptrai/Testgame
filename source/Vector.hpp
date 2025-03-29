@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <vector>
-
+#include <math.h>
 
 
 class Vector2D{
@@ -32,4 +32,10 @@ public:
 
     Vector2D& operator*=(const int& i);
     Vector2D& Zero();
+
+    Vector2D normalize() const {
+        float magnitude = std::sqrt(x * x + y * y);
+        std::cout << x/magnitude << " " << y/magnitude << std::endl;
+        return (magnitude > 0) ? Vector2D(x / magnitude, y / magnitude) : Vector2D(0, 0);
+    }
 };

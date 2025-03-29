@@ -14,17 +14,18 @@ class Game{
         Game();
         ~Game();
 
-        void init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen, SDL_Window* window);
+        void init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen);
         void initObject();
         void initTextures();
-        void initMenu();
-
+        void initComponents();
+        
         void handleEvents();
         void update();
         
         void render();
-        void clean(SDL_Window* window);
+        void clean();
 
+        void gameOver();
         bool running(){
             return isRunning;
         }
@@ -38,10 +39,11 @@ class Game{
         static bool exit;
         static bool settingsEnabled; 
         static bool start;
-
         int mouseX, mouseY;
         SDL_Color mint = {20, 193, 225, 255};
         SDL_Color white = {12, 60, 88, 255};
+
+
         enum GroupLabels : std::size_t{
             groupMap,
             groupPlayers,
@@ -52,6 +54,8 @@ class Game{
         };
     private:
         int cnt = 0;
+        SDL_Window* window;
+        
 
 
 };

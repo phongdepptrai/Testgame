@@ -26,9 +26,13 @@ public:
         animated = isAnimated;
         Animation Idle = Animation(0, 10, 100);
         Animation Run = Animation(1, 16, 100);
+        Animation Attack = Animation(2, 7, 100);
+        Animation Hurt = Animation(3, 4, 100);
 
         animations.emplace("Idle", Idle);
         animations.emplace("Run", Run);
+        animations.emplace("Attack", Attack);
+        
 
         play("Idle");
 
@@ -37,6 +41,9 @@ public:
     ~SpriteComponent(){
     }
     void init() override{
+        if(!entity->hasComponent<TransformComponent>()){
+            entity->addComponent<TransformComponent>();
+        }
         transform = &entity->getComponent<TransformComponent>(); 
 
         srcRect.x = srcRect.y = 0;
@@ -62,11 +69,21 @@ public:
     }
 
     void draw() override{
+        if(transform->direction) spriteFlip = SDL_FLIP_HORIZONTAL;
+        else spriteFlip = SDL_FLIP_NONE;
+        if(texture == nullptr){
+            std::cout << "texture is null" << std::endl;
+            return;
+        }
         TextureManager::Draw(texture, srcRect, destRect, spriteFlip);
     }
 
     void setTex(std::string id){
         texture = Game::assets->getTexture(id);
+        if(texture == nullptr){
+            std::cout << "tsprite is null" << std::endl;
+            return;
+        }
     }
     
     void play(const char* animName){
