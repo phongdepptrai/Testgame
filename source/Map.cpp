@@ -266,6 +266,8 @@ void Map::LoadMap(int sizeX, int sizeY){
             }
             addTile(0, 0, x*scaledSize, y*scaledSize , text);
             tile = layer2[y][x];
+            if(tile == 5)
+                continue;
             text = getTextures(tile);
             if( text == NULL){
                 std::cout<<"failed to render2"<<std::endl;

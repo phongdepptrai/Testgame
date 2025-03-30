@@ -35,7 +35,6 @@ public:
 
     Vector2D normalize() const {
         float magnitude = std::sqrt(x * x + y * y);
-        std::cout << x/magnitude << " " << y/magnitude << std::endl;
         return (magnitude > 0) ? Vector2D(x / magnitude, y / magnitude) : Vector2D(0, 0);
     }
 };

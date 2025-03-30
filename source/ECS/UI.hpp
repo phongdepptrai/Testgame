@@ -52,7 +52,7 @@ public:
         SDL_RenderCopy(Game::renderer, labelTexture, nullptr, &position);
         SDL_DestroyTexture(labelTexture);
     };
-
+    
 private:
     SDL_Rect position;
     std::string labelText, labelFont;

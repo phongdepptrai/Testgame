@@ -9,7 +9,8 @@ public:
     TransformComponent* transform;
     SpriteComponent* sprite;
     int attackTimer = 0;
-    bool isAttacking = false; // Flag to track attack state
+    bool isAttacking = false;
+    bool isHurt = false;
     void init() {
         transform = &entity->getComponent<TransformComponent>();
         sprite = &entity->getComponent<SpriteComponent>();
@@ -17,8 +18,11 @@ public:
     int mouseX = 0, mouseY = 0;
     Uint32 currentTime = 0;
     Uint32 lastAttackTime = 0;
+    Uint32 lastHurtTime = 0;
     void update() {
         currentTime = SDL_GetTicks();
+
+        if(currentTime - lastHurtTime > 500) isHurt = false, lastHurtTime = 0;
 
         // Mouse click -> attack
         if(currentTime - lastAttackTime > 500) isAttacking = false, lastAttackTime = currentTime;
@@ -70,7 +74,8 @@ public:
                     break;
             }
         }
-        if(isAttacking) sprite->play("Attack");
+        if(isHurt) sprite->play("Hurt");
+        else if(isAttacking) sprite->play("Attack");
         else if(transform->velocity.x || transform->velocity.y) sprite->play("Run");
         else sprite->play("Idle");
     }

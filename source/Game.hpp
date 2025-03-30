@@ -41,7 +41,7 @@ class Game{
         static bool start;
         int mouseX, mouseY;
         SDL_Color mint = {20, 193, 225, 255};
-        SDL_Color white = {12, 60, 88, 255};
+        SDL_Color white = {225, 60, 88, 255};
 
 
         enum GroupLabels : std::size_t{
@@ -59,3 +59,5 @@ class Game{
 
 
 };
+
+

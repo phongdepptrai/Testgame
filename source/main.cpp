@@ -11,7 +11,7 @@ int main(int argc, char* argv[]){
     game = new Game();
     bool fullscreen = false;
     
-    game->init("Ohio Survival", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 640, false);
+    game->init("Ohio Survival", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1536, 1024, false);
 
     while (game->running()){
         frameStart = SDL_GetTicks();

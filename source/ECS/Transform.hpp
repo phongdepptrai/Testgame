@@ -8,7 +8,12 @@ class TransformComponent : public Component {
         Vector2D position;
         Vector2D velocity;
         bool direction = false;
+        Uint32 collapseTimer = 600; 
+        Uint32 timer = 0;
+        bool collapsed = false;
 
+        int score = 0;
+        
         int height = 32;
         int width = 32;
         int scale = 1;
@@ -48,6 +53,10 @@ class TransformComponent : public Component {
         void update() override {
             position.x += velocity.x * speed;
             position.y += velocity.y * speed;
+        }
+        void setMaxHealth(int HP){
+            maxHealth = HP;
+            health = HP;
         }
         
     
