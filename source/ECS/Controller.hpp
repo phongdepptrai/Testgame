@@ -19,7 +19,7 @@ public:
     Uint32 currentTime = 0;
     Uint32 lastAttackTime = 0;
     Uint32 lastHurtTime = 0;
-    void update() {
+    void update() override {
         currentTime = SDL_GetTicks();
 
         if(currentTime - lastHurtTime > 500) isHurt = false, lastHurtTime = 0;
@@ -66,9 +66,6 @@ public:
                 case SDLK_d:
                     transform->velocity.x = 0;
                     // sprite->play("Idle");
-                    break;
-                case SDLK_ESCAPE:
-                    Game::isRunning = false;
                     break;
                 default:
                     break;

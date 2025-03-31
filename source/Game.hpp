@@ -41,6 +41,7 @@ class Game{
         static bool setting;
         static bool start;
         static bool gameOverScene;
+        static bool pause;
         int mouseX, mouseY;
         SDL_Color mint = {20, 193, 225, 255};
         SDL_Color white = {225, 60, 88, 255};

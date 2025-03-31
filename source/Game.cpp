@@ -45,6 +45,9 @@ auto& gameOverLabel(manager.addEntity());
 auto& survivedTimeLabel(manager.addEntity());
 auto& backToMenuButton(manager.addEntity());
 
+auto& resumeButton(manager.addEntity());
+auto& exitToMenuButtonPause(manager.addEntity());
+
 SDL_Rect volumeBar = {250, 270, 0, 20}; 
 
 int score = 0;
@@ -73,7 +76,7 @@ bool Game::menu = true;
 bool Game::exit = false;
 bool Game::settingsEnabled = false;
 bool Game::setting = false;
-
+bool Game::pause = false;
 bool Game::gameOverScene = false;
 Uint32 survivedTime = 0;
 
@@ -175,6 +178,9 @@ void Game::initComponents(){
     gameOverLabel.addComponent<UI>(255, 300, "Game Over", "font", white); 
     survivedTimeLabel.addComponent<UI>(255, 350, "Survived Time: 0s", "font", white); 
     backToMenuButton.addComponent<UI>(255, 450, "Back to Menu", "font", white); 
+
+    resumeButton.addComponent<UI>(255, 305, "Resume", "font", white);
+    exitToMenuButtonPause.addComponent<UI>(255, 355, "Exit To Menu","font", white);
 }
 void Game::initObject(){
    
@@ -208,15 +214,7 @@ auto& projectiles(manager.getGroup(Game::groupProjectiles));
 
 void Game::handleEvents() {
     SDL_PollEvent(&event);
-    switch (event.type) {
-        case SDL_QUIT:
-            start = false;
-            gameOver();
-            break;
-        default:
-            break;
-    }
-
+    
     if (gameOverScene) {
         SDL_GetMouseState(&mouseX, &mouseY);
 
@@ -316,6 +314,7 @@ void Game::handleEvents() {
             if (start){ 
                 std::cout<<"start"<<std::endl;
                 Mix_PlayChannel(-1, assets->getSound("gameStart"), 0);
+                score = 0;
                 initObject();
                 menu = false;
             }
@@ -352,17 +351,44 @@ void Game::handleEvents() {
                 lastProjectileTime = currentTime;
             }
         }
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+            pause = true; 
+            start = false;
+        }
+    }
+    else if (pause) {
+        SDL_GetMouseState(&mouseX, &mouseY);
+        //resume
+        if (mouseX >= 250 && mouseX <= 500 && mouseY >= 305 && mouseY < 355) {
+            resumeButton.getComponent<UI>().setColor(mint);
+            if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+                pause = false; 
+                start = true;
+            }
+        } else {
+            resumeButton.getComponent<UI>().setColor(white);
+        }
+        // exit to menu
+        if (mouseX >= 250 && mouseX <= 500 && mouseY >= 355 && mouseY < 405) {
+            exitToMenuButtonPause.getComponent<UI>().setColor(mint);
+            if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+                pause = false;
+                gameOverScene = true;
+                gameOver();
+            }
+        } else {
+            exitToMenuButtonPause.getComponent<UI>().setColor(white);
+        }
+        return; 
     }
 }
 
 
 void Game::update() {
+    if(pause){
 
-    
-        std::cout << "GameOver Position: " 
-          << gameover.getComponent<TransformComponent>().position.x << ", "
-          << gameover.getComponent<TransformComponent>().position.y << std::endl;
-
+        return;
+    }
     
     if (!menu && !setting && !gameOverScene) {
         SDL_Rect playerCol = Player.getComponent<ColliderComponent>().collider;
@@ -387,7 +413,6 @@ void Game::update() {
                 Player.getComponent<TransformComponent>().position = playerPos;
             }
         }
-
 
         for (auto& e : enemies) {
             Vector2D playerPos = Vector2D(Player.getComponent<ColliderComponent>().collider.x, Player.getComponent<ColliderComponent>().collider.y);
@@ -420,7 +445,6 @@ void Game::update() {
                 e->getComponent<SpriteComponent>().play("Run");
             }
         }
-
 
         //player shoot enemy
         for (auto& e : enemies) {
@@ -499,7 +523,6 @@ void Game::update() {
         SDL_GetMouseState(&mouseX, &mouseY);
         if (mouseX >= 250 && mouseX <= 500 && mouseY >= 300 +300 && mouseY < 350 + 300) {
             start = true;
-
             startButton.getComponent<UI>().setColor(mint);
             startButton.getComponent<UI>().setPos(255, 305+300);
         } else {
@@ -534,8 +557,42 @@ void Game::update() {
 
 void Game::render() {
     SDL_RenderClear(renderer);
+    if(pause){
+        for (auto& t : tiles) {
+            t->draw();
+        }
+        for (auto& c : colliders) {
+            c->draw();
+        }
+        for (auto& p : players) {
+            p->draw();
+        }
+        for (auto& e : enemies) {
+            e->draw();
+        }
+        for (auto& p : projectiles) {
+            p->draw();
+        }
+        Label.draw();
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        SDL_RenderFillRect(renderer, &playerHealthBar);
 
-    if (gameOverScene) {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_Rect border = {playerHealthBar.x - 1, playerHealthBar.y - 1, 202, 22};
+        SDL_RenderDrawRect(renderer, &border);
+
+        int windowWidth, windowHeight;
+        SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 128);
+        SDL_Rect overlay = {0, 0, windowWidth, windowHeight};
+        SDL_RenderFillRect(renderer, &overlay);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
+        resumeButton.draw();
+        exitToMenuButtonPause.draw();
+    }
+    else if (gameOverScene) {
         //render game over scene
         gameover.draw();
 
@@ -563,7 +620,7 @@ void Game::render() {
             HighScore.draw();
         }
     } else if (setting) {
-        //render the settings menu
+
         std::stringstream volumeText;
         volumeText << "Volume: " <<(static_cast<int>(volume * 100 / MIX_MAX_VOLUME)) << "%";
         volumeButton.getComponent<UI>().setText(volumeText.str());
@@ -625,7 +682,7 @@ void Game::gameOver() {
 
     survivedTime = SDL_GetTicks() / 1000; 
 
-    score = 0;
+
     for (auto& t : tiles) {
         t->destroy();
     }
