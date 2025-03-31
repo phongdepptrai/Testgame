@@ -51,9 +51,9 @@ public:
             collider.h = (transform->height - 34) * transform->scale;
         }
         if( tag == "Player_projectile"){
-            collider.x = static_cast<int>(transform->position.x + 92 * transform->scale);
+            collider.x = static_cast<int>(transform->position.x + 84 * transform->scale);
             collider.y = static_cast<int>(transform->position.y + 84 * transform->scale);
-            collider.w = (transform->width - 168) * transform->scale;
+            collider.w = (transform->width - 150) * transform->scale;
             collider.h = (transform->height - 168) * transform->scale;
         }
         destR.x = collider.x - Game::camera.x;

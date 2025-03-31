@@ -38,6 +38,7 @@ class Game{
         static bool menu;
         static bool exit;
         static bool settingsEnabled; 
+        static bool setting;
         static bool start;
         int mouseX, mouseY;
         SDL_Color mint = {20, 193, 225, 255};

@@ -8,7 +8,7 @@ class TransformComponent : public Component {
         Vector2D position;
         Vector2D velocity;
         bool direction = false;
-        Uint32 collapseTimer = 600; 
+        Uint32 collapseTimer = 800; 
         Uint32 timer = 0;
         bool collapsed = false;
 

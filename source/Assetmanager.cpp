@@ -37,7 +37,6 @@ TTF_Font* AssetManager::getFont(std::string id){
     return fonts[id];
 }
 
-// Add a sound effect
 void AssetManager::addSound(std::string id, std::string path) {
     Mix_Chunk* sound = Mix_LoadWAV(path.c_str());
     if (sound == nullptr) {
@@ -47,12 +46,11 @@ void AssetManager::addSound(std::string id, std::string path) {
     }
 }
 
-// Retrieve a sound effect
 Mix_Chunk* AssetManager::getSound(std::string id) {
     return sounds[id];
 }
 
-// Add music
+
 void AssetManager::addMusic(std::string id, std::string path) {
     Mix_Music* music = Mix_LoadMUS(path.c_str());
     if (music == nullptr) {
@@ -62,7 +60,7 @@ void AssetManager::addMusic(std::string id, std::string path) {
     }
 }
 
-// Retrieve music
+
 Mix_Music* AssetManager::getMusic(std::string id) {
     return musicTracks[id];
 }

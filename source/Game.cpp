@@ -36,10 +36,18 @@ auto& background(manager.addEntity());
 
 auto& restartButton(manager.addEntity());
 
+auto& volumeButton(manager.addEntity());
+auto& fullscreenButton(manager.addEntity());
+auto& exitToMenuButton(manager.addEntity());
+
+SDL_Rect volumeBar = {250, 270, 0, 20}; 
+
 int score = 0;
 int highScore = 0;
 
-auto& Enemy(manager.addEntity());
+int volumeLevel = MIX_MAX_VOLUME / 2;
+float volume = 64.0f;
+
 
 const int maxEnemyID = 2;
 
@@ -59,6 +67,10 @@ bool Game::start = false;
 bool Game::menu = true;
 bool Game::exit = false;
 bool Game::settingsEnabled = false;
+bool Game::setting = false;
+
+
+bool isFullscreen = false;
 
 Uint32 lastHitTime = 0;
 
@@ -103,6 +115,10 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height, bo
 
     
     Mix_PlayMusic(assets->getMusic("backgroundMusic"), -1);
+
+    
+    Mix_Volume(-1, volumeLevel); 
+    Mix_VolumeMusic(volumeLevel);
 }
 
 void Game::initTextures(){
@@ -112,7 +128,6 @@ void Game::initTextures(){
     
     assets->addTexture("background", "assets/MapTexture/background.png");
     
-    assets->addTexture("enemy", "assets/PlayerTexture/Golem.png");
     assets->addTexture("yellowGolem","assets/EnemyTexture/yellowGolem.png");
     assets->addTexture("blueGolem","assets/EnemyTexture/blueGolem.png");
     
@@ -141,6 +156,9 @@ void Game::initComponents(){
     Label.addComponent<UI>(10, 30, "Score: 0", "font",white);
     HighScore.addComponent<UI>(10, 300, "High Score: 0", "font", white);
 
+    volumeButton.addComponent<UI>(255, 305, "Volume", "font", white);
+    fullscreenButton.addComponent<UI>(255, 355, "Fullscreen", "font", white);
+    exitToMenuButton.addComponent<UI>(255, 405, "Exit to Menu", "font", white);
 }
 void Game::initObject(){
    
@@ -181,7 +199,98 @@ void Game::handleEvents() {
         default:
             break;
     }
-    if(menu){
+
+    if (setting) {
+        SDL_GetMouseState(&mouseX, &mouseY);
+
+
+        if (mouseX >= 250 && mouseX <= 500 && mouseY >= 300 && mouseY < 350) {
+            volumeButton.getComponent<UI>().setColor(mint);
+            if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+                volume += 12.8f;
+                volumeLevel += static_cast<int>(volume);
+                if (volume > MIX_MAX_VOLUME+0.5f) {
+                    std::cout<<volume<<" "<<volumeLevel<<std::endl;
+                    volumeLevel = 0;
+                    volume = 0; 
+                }
+
+                
+                Mix_Volume(-1, volumeLevel);
+                Mix_VolumeMusic(volumeLevel); 
+
+                
+                std::stringstream volumeText;
+                volumeText << "Volume: " <<( static_cast<int>(volume * 100) / MIX_MAX_VOLUME) << "%";
+                volumeButton.getComponent<UI>().setText(volumeText.str());
+
+                std::cout << "Volume set to: " <<( static_cast<int>(volume * 100) / MIX_MAX_VOLUME) << "%" << std::endl;
+            }
+        } else {
+            volumeButton.getComponent<UI>().setColor(white);
+        }
+
+        // Fullscreen button
+        if (mouseX >= 250 && mouseX <= 500 && mouseY >= 350 && mouseY < 400) {
+            fullscreenButton.getComponent<UI>().setColor(mint);
+            if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+                if (!isFullscreen) {
+                    std::cout << "Fullscreen button clicked: Full Screen ON" << std::endl;
+
+                   
+                    SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+
+                    
+                    int windowWidth, windowHeight;
+                    SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+
+                    
+                    background.getComponent<TransformComponent>().width = windowWidth;
+                    background.getComponent<TransformComponent>().height = windowHeight;
+
+                    
+                    fullscreenButton.getComponent<UI>().setText("Full Screen: ON");
+
+                    isFullscreen = true;
+                } else {
+                    std::cout << "Fullscreen button clicked: Full Screen OFF" << std::endl;
+
+                    
+                    SDL_SetWindowFullscreen(window, 0);
+
+                   
+                    int initialWidth = 1536;
+                    int initialHeight = 1024;
+                    SDL_SetWindowSize(window, initialWidth, initialHeight);
+
+                    
+                    background.getComponent<TransformComponent>().width = initialWidth;
+                    background.getComponent<TransformComponent>().height = initialHeight;
+
+                    
+                    fullscreenButton.getComponent<UI>().setText("Full Screen: OFF");
+
+                    isFullscreen = false;
+                }
+            }
+        } else {
+            fullscreenButton.getComponent<UI>().setColor(white);
+        }
+
+        // Exit to Menu button
+        if (mouseX >= 250 && mouseX <= 500 && mouseY >= 400 && mouseY < 450) {
+            exitToMenuButton.getComponent<UI>().setColor(mint);
+            if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+                std::cout << "Exit to Menu button clicked" << std::endl;
+                setting = false;
+                menu = true;
+            }
+        } else {
+            exitToMenuButton.getComponent<UI>().setColor(white);
+        }
+    }
+
+    else if(menu){
         if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT){  
             if (start){ 
                 std::cout<<"start"<<std::endl;
@@ -197,7 +306,9 @@ void Game::handleEvents() {
             else if (settingsEnabled){
                 std::cout<<"settings"<<std::endl;
                     //Setting();
-                // menu = false;
+                setting = true;
+                menu = false;
+                
             }
         }
     }
@@ -223,9 +334,9 @@ void Game::handleEvents() {
     }
 }
 
-// Modify the `update()` function to include enemy spawning logic
+
 void Game::update() {
-    if (!menu) {
+    if (!menu && !setting) {
         SDL_Rect playerCol = Player.getComponent<ColliderComponent>().collider;
         Vector2D playerPos = Player.getComponent<TransformComponent>().position;
 
@@ -313,10 +424,9 @@ void Game::update() {
 
         // Spawn new enemies every 5 seconds within 300 pixels around the player
         Uint32 currentTime = SDL_GetTicks();
-        if (currentTime - lastEnemySpawnTime >= 5000) { // 5000 ms = 5 seconds
+        if (currentTime - lastEnemySpawnTime >= 5000) {
             Vector2D playerPos = Player.getComponent<TransformComponent>().position;
 
-            // Generate random positions within a 300-pixel radius around the player
 
             int offsetX; 
             int offsetY;
@@ -385,11 +495,15 @@ void Game::update() {
             exitButton.getComponent<UI>().setPos(250, 400+300);
         }
     }
+    else if(setting){
+        manager.refresh();
+        manager.update();
+    }
 }
 
 void Game::render() {
     SDL_RenderClear(renderer);
-    if(!menu){
+    if (!menu && !setting) {
         for (auto& t : tiles) {
             t->draw();
         }
@@ -406,25 +520,40 @@ void Game::render() {
             p->draw();
         }
         Label.draw();
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); 
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_RenderFillRect(renderer, &playerHealthBar);
 
-        
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_Rect border = {playerHealthBar.x - 1, playerHealthBar.y - 1, 202, 22};
         SDL_RenderDrawRect(renderer, &border);
-    }
-    else if(menu){
+    } else if (menu) {
+        // Render the main menu
         background.draw();
         startButton.draw();
         settingsButton.draw();
         exitButton.draw();
         std::stringstream hs;
-        if(highScore != 0) {
+        if (highScore != 0) {
             hs << "High Score: " << highScore;
             HighScore.getComponent<UI>().setText(hs.str());
             HighScore.draw();
         }
+    } else if (setting) {
+        // Render the settings menu
+        std::stringstream volumeText;
+        volumeText << "Volume: " <<(static_cast<int>(volume * 100 / MIX_MAX_VOLUME)) << "%";
+        volumeButton.getComponent<UI>().setText(volumeText.str());
+        background.draw();
+        volumeButton.draw();
+        fullscreenButton.draw();
+        exitToMenuButton.draw();
+        volumeBar.w = static_cast<int>((250 * volume) / MIX_MAX_VOLUME); 
+        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); 
+        SDL_RenderFillRect(renderer, &volumeBar);
+        SDL_Rect volumeBarBorder = {volumeBar.x - 1, volumeBar.y - 1, 252, 22}; 
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
+        SDL_RenderDrawRect(renderer, &volumeBarBorder);
+        
     }
     SDL_RenderPresent(renderer);
 }
