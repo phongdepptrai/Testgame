@@ -160,7 +160,7 @@ void Game::initComponents(){
 
 
     startButton.addComponent<UI>(255, 305, "Play Game", "font", white);
-    settingsButton.addComponent<UI>(255, 355, "Settings", "font", mint);
+    settingsButton.addComponent<UI>(255, 355, "Settings", "font", white);
     exitButton.addComponent<UI>(255, 405, "Exit", "font",white);
 
     SDL_Color color = {23,243,254,205};
@@ -169,7 +169,7 @@ void Game::initComponents(){
     HighScore.addComponent<UI>(10, 300, "High Score: 0", "font", white);
 
     volumeButton.addComponent<UI>(255, 305, "Volume", "font", white);
-    fullscreenButton.addComponent<UI>(255, 355, "Fullscreen", "font", white);
+    fullscreenButton.addComponent<UI>(255, 355, "Fullscreen: OFF", "font", white);
     exitToMenuButton.addComponent<UI>(255, 405, "Exit to Menu", "font", white);
 
     gameOverLabel.addComponent<UI>(255, 300, "Game Over", "font", white); 
@@ -210,7 +210,8 @@ void Game::handleEvents() {
     SDL_PollEvent(&event);
     switch (event.type) {
         case SDL_QUIT:
-            isRunning = false;
+            start = false;
+            gameOver();
             break;
         default:
             break;
@@ -356,6 +357,13 @@ void Game::handleEvents() {
 
 
 void Game::update() {
+
+    
+        std::cout << "GameOver Position: " 
+          << gameover.getComponent<TransformComponent>().position.x << ", "
+          << gameover.getComponent<TransformComponent>().position.y << std::endl;
+
+    
     if (!menu && !setting && !gameOverScene) {
         SDL_Rect playerCol = Player.getComponent<ColliderComponent>().collider;
         Vector2D playerPos = Player.getComponent<TransformComponent>().position;
@@ -375,7 +383,7 @@ void Game::update() {
         for (auto& c : colliders) {
             SDL_Rect cCol = c->getComponent<ColliderComponent>().collider;
             if (Collision::CheckCollision(cCol, playerCol)) {
-                std::cout << "Collision with: " << c->getComponent<ColliderComponent>().tag << std::endl;
+                // std::cout << "Collision with: " << c->getComponent<ColliderComponent>().tag << std::endl;
                 Player.getComponent<TransformComponent>().position = playerPos;
             }
         }
@@ -396,7 +404,7 @@ void Game::update() {
             if (Collision::CheckCollision(eCol, playerCol)) {
 
                 e->getComponent<SpriteComponent>().play("Attack");
-                std::cout << "Collision with: " << e->getComponent<ColliderComponent>().tag << std::endl;
+                // std::cout << "Collision with: " << e->getComponent<ColliderComponent>().tag << std::endl;
                 if (SDL_GetTicks() - lastHitTime >= 2000) {
                     lastHitTime = SDL_GetTicks();
                     //take damage
@@ -421,7 +429,7 @@ void Game::update() {
                 if (p->getComponent<ColliderComponent>().tag == "Player_projectile") {
                     SDL_Rect pCol = p->getComponent<ColliderComponent>().collider;
                     if (Collision::CheckCollision(pCol, eCol)) {
-                        std::cout << "Collision with: " << p->getComponent<ColliderComponent>().tag << std::endl;
+                        // std::cout << "Collision with: " << p->getComponent<ColliderComponent>().tag << std::endl;
                         p->destroy();
                         e->getComponent<TransformComponent>().health -= p->getComponent<TransformComponent>().damage;
                     }
@@ -518,7 +526,7 @@ void Game::update() {
             exitButton.getComponent<UI>().setPos(250, 400+300);
         }
     }
-    else if(setting){
+    else {
         manager.refresh();
         manager.update();
     }
@@ -634,9 +642,11 @@ void Game::gameOver() {
     menu = false;
     start = false;
     setting = false;
+    settingsEnabled = false;
+
     gameOverScene = true;
 
     Player.removeAllComponents();
 
-    camera = {0, 0, 2000, 2000};
+    camera = {0, 0, 1536, 1024};
 }
