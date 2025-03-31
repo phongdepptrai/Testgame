@@ -33,12 +33,17 @@ auto& settingsButton(manager.addEntity());
 auto& exitButton(manager.addEntity());
 
 auto& background(manager.addEntity());  
+auto& gameover (manager.addEntity());
 
 auto& restartButton(manager.addEntity());
 
 auto& volumeButton(manager.addEntity());
 auto& fullscreenButton(manager.addEntity());
 auto& exitToMenuButton(manager.addEntity());
+
+auto& gameOverLabel(manager.addEntity());
+auto& survivedTimeLabel(manager.addEntity());
+auto& backToMenuButton(manager.addEntity());
 
 SDL_Rect volumeBar = {250, 270, 0, 20}; 
 
@@ -69,6 +74,8 @@ bool Game::exit = false;
 bool Game::settingsEnabled = false;
 bool Game::setting = false;
 
+bool Game::gameOverScene = false;
+Uint32 survivedTime = 0;
 
 bool isFullscreen = false;
 
@@ -127,6 +134,7 @@ void Game::initTextures(){
     assets->addTexture("projectile", "assets/Projectiles/attack/attack.png");
     
     assets->addTexture("background", "assets/MapTexture/background.png");
+    assets->addTexture("gameover", "assets/MapTexture/gameover.png");
     
     assets->addTexture("yellowGolem","assets/EnemyTexture/yellowGolem.png");
     assets->addTexture("blueGolem","assets/EnemyTexture/blueGolem.png");
@@ -146,6 +154,10 @@ void Game::initTextures(){
 void Game::initComponents(){
     background.addComponent<TransformComponent>(0, 0, 1536, 1024, 1);
     background.addComponent<SpriteComponent>("background");
+    
+    gameover.addComponent<TransformComponent>(0, 0, 1536, 1024, 1);
+    gameover.addComponent<SpriteComponent>("gameover");
+
 
     startButton.addComponent<UI>(255, 305, "Play Game", "font", white);
     settingsButton.addComponent<UI>(255, 355, "Settings", "font", mint);
@@ -159,6 +171,10 @@ void Game::initComponents(){
     volumeButton.addComponent<UI>(255, 305, "Volume", "font", white);
     fullscreenButton.addComponent<UI>(255, 355, "Fullscreen", "font", white);
     exitToMenuButton.addComponent<UI>(255, 405, "Exit to Menu", "font", white);
+
+    gameOverLabel.addComponent<UI>(255, 300, "Game Over", "font", white); 
+    survivedTimeLabel.addComponent<UI>(255, 350, "Survived Time: 0s", "font", white); 
+    backToMenuButton.addComponent<UI>(255, 450, "Back to Menu", "font", white); 
 }
 void Game::initObject(){
    
@@ -200,7 +216,22 @@ void Game::handleEvents() {
             break;
     }
 
-    if (setting) {
+    if (gameOverScene) {
+        SDL_GetMouseState(&mouseX, &mouseY);
+
+        if (mouseX >= 250 && mouseX <= 500 && mouseY >= 450 && mouseY < 500) {
+            backToMenuButton.getComponent<UI>().setColor(mint);
+            if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+                std::cout << "Back to Menu button clicked" << std::endl;
+                gameOverScene = false;
+                menu = true;
+            }
+        } else {
+            backToMenuButton.getComponent<UI>().setColor(white);
+        }
+    }
+
+    else if (setting) {
         SDL_GetMouseState(&mouseX, &mouseY);
 
 
@@ -235,38 +266,27 @@ void Game::handleEvents() {
             fullscreenButton.getComponent<UI>().setColor(mint);
             if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
                 if (!isFullscreen) {
-                    std::cout << "Fullscreen button clicked: Full Screen ON" << std::endl;
-
-                   
                     SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
 
-                    
                     int windowWidth, windowHeight;
                     SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-
                     
                     background.getComponent<TransformComponent>().width = windowWidth;
                     background.getComponent<TransformComponent>().height = windowHeight;
-
                     
                     fullscreenButton.getComponent<UI>().setText("Full Screen: ON");
 
                     isFullscreen = true;
                 } else {
-                    std::cout << "Fullscreen button clicked: Full Screen OFF" << std::endl;
-
                     
                     SDL_SetWindowFullscreen(window, 0);
 
-                   
                     int initialWidth = 1536;
                     int initialHeight = 1024;
                     SDL_SetWindowSize(window, initialWidth, initialHeight);
-
                     
                     background.getComponent<TransformComponent>().width = initialWidth;
                     background.getComponent<TransformComponent>().height = initialHeight;
-
                     
                     fullscreenButton.getComponent<UI>().setText("Full Screen: OFF");
 
@@ -336,7 +356,7 @@ void Game::handleEvents() {
 
 
 void Game::update() {
-    if (!menu && !setting) {
+    if (!menu && !setting && !gameOverScene) {
         SDL_Rect playerCol = Player.getComponent<ColliderComponent>().collider;
         Vector2D playerPos = Player.getComponent<TransformComponent>().position;
 
@@ -366,12 +386,15 @@ void Game::update() {
             Vector2D playerDirection = Vector2D(playerPos.x - e->getComponent<ColliderComponent>().collider.x - 20,
                                                 playerPos.y - e->getComponent<ColliderComponent>().collider.y  - 20);
             playerDirection = playerDirection.normalize();
-            if(!e->getComponent<TransformComponent>().collapsed)
-                e->getComponent<TransformComponent>().velocity = playerDirection;
+            bool isCollapsed = e->getComponent<TransformComponent>().collapsed;
+            if (isCollapsed)
+                continue;
+            e->getComponent<TransformComponent>().velocity = playerDirection;
             // flip the srpite 
             e->getComponent<TransformComponent>().direction = playerDirection.x <= 0 ? true : false;
             SDL_Rect eCol = e->getComponent<ColliderComponent>().collider;
             if (Collision::CheckCollision(eCol, playerCol)) {
+
                 e->getComponent<SpriteComponent>().play("Attack");
                 std::cout << "Collision with: " << e->getComponent<ColliderComponent>().tag << std::endl;
                 if (SDL_GetTicks() - lastHitTime >= 2000) {
@@ -503,7 +526,53 @@ void Game::update() {
 
 void Game::render() {
     SDL_RenderClear(renderer);
-    if (!menu && !setting) {
+
+    if (gameOverScene) {
+        //render game over scene
+        gameover.draw();
+
+        std::stringstream scoreText;
+        scoreText << "Score: " << score;
+        gameOverLabel.getComponent<UI>().setText(scoreText.str());
+        gameOverLabel.draw();
+
+        std::stringstream timeText;
+        timeText << "Survived Time: " << survivedTime << "s";
+        survivedTimeLabel.getComponent<UI>().setText(timeText.str());
+        survivedTimeLabel.draw();
+
+        backToMenuButton.draw();
+    }  else if (menu) {
+        //render the main menu
+        background.draw();
+        startButton.draw();
+        settingsButton.draw();
+        exitButton.draw();
+        std::stringstream hs;
+        if (highScore != 0) {
+            hs << "High Score: " << highScore;
+            HighScore.getComponent<UI>().setText(hs.str());
+            HighScore.draw();
+        }
+    } else if (setting) {
+        //render the settings menu
+        std::stringstream volumeText;
+        volumeText << "Volume: " <<(static_cast<int>(volume * 100 / MIX_MAX_VOLUME)) << "%";
+        volumeButton.getComponent<UI>().setText(volumeText.str());
+        background.draw();
+        volumeButton.draw();
+        fullscreenButton.draw();
+        exitToMenuButton.draw();
+        volumeBar.w = static_cast<int>((250 * volume) / MIX_MAX_VOLUME); 
+        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); 
+        SDL_RenderFillRect(renderer, &volumeBar);
+        SDL_Rect volumeBarBorder = {volumeBar.x - 1, volumeBar.y - 1, 252, 22}; 
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
+        SDL_RenderDrawRect(renderer, &volumeBarBorder);
+        
+    }
+    else {
+        //start game
         for (auto& t : tiles) {
             t->draw();
         }
@@ -526,34 +595,6 @@ void Game::render() {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_Rect border = {playerHealthBar.x - 1, playerHealthBar.y - 1, 202, 22};
         SDL_RenderDrawRect(renderer, &border);
-    } else if (menu) {
-        // Render the main menu
-        background.draw();
-        startButton.draw();
-        settingsButton.draw();
-        exitButton.draw();
-        std::stringstream hs;
-        if (highScore != 0) {
-            hs << "High Score: " << highScore;
-            HighScore.getComponent<UI>().setText(hs.str());
-            HighScore.draw();
-        }
-    } else if (setting) {
-        // Render the settings menu
-        std::stringstream volumeText;
-        volumeText << "Volume: " <<(static_cast<int>(volume * 100 / MIX_MAX_VOLUME)) << "%";
-        volumeButton.getComponent<UI>().setText(volumeText.str());
-        background.draw();
-        volumeButton.draw();
-        fullscreenButton.draw();
-        exitToMenuButton.draw();
-        volumeBar.w = static_cast<int>((250 * volume) / MIX_MAX_VOLUME); 
-        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); 
-        SDL_RenderFillRect(renderer, &volumeBar);
-        SDL_Rect volumeBarBorder = {volumeBar.x - 1, volumeBar.y - 1, 252, 22}; 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
-        SDL_RenderDrawRect(renderer, &volumeBarBorder);
-        
     }
     SDL_RenderPresent(renderer);
 }
@@ -566,13 +607,16 @@ void Game::clean() {
 }
 
 
-void Game::gameOver(){
-    std::cout<<"Game Over"<<std::endl;
+void Game::gameOver() {
+    std::cout << "Game Over" << std::endl;
     Mix_PlayChannel(-1, assets->getSound("gameOver"), 0);
 
     if (score > highScore) {
         highScore = score;
     }
+
+    survivedTime = SDL_GetTicks() / 1000; 
+
     score = 0;
     for (auto& t : tiles) {
         t->destroy();
@@ -586,12 +630,13 @@ void Game::gameOver(){
     for (auto& p : projectiles) {
         p->destroy();
     }
-    menu = true;
+
+    menu = false;
     start = false;
-    
+    setting = false;
+    gameOverScene = true;
 
     Player.removeAllComponents();
-    
-    camera = {0, 0, 2000, 2000};
 
+    camera = {0, 0, 2000, 2000};
 }
